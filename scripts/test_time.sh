@@ -25,10 +25,11 @@ fi
 echo "Creating $OUTPUT, temporary dir ($TEMPDIR) and compiling code"
 
 echo "Source;Threads;Input;Result;Output" > $OUTPUT
+
 mkdir $TEMPDIR
 for SRCFILE in "${CODE[@]}"
 do
-	$CC $SRCDIR/$SRCFILE -o $TEMPDIR/${SRCFILE%".c"}.out 
+	$CC $CFLAGS $SRCDIR/$SRCFILE -o $TEMPDIR/${SRCFILE%".c"}.out 
 done
 
 for VERSION in "${CODE[@]}"
@@ -44,6 +45,7 @@ do
 		do
 			for INPUT in "${INPUTFILES[@]}"
 			do
+				# TODO: mpiexec doesn't get anything from stdin for some reason
 				$EXEC -n $THREADS $TEMPDIR/${VERSION%".c"}.out < $INPUTDIR/$INPUT > $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt
 				RESULT="`tail -n 1 $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt`" # is either a percentage or a time count
 				OUTSTATUS="ok"
