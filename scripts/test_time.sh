@@ -14,14 +14,14 @@ CFLAGS="-fopenmp -Wextra -O3"
 COMPILER="gcc"
 NUM_EXECS=20
 
-if [[ "$1" == "--help" ]]
+if [ "$1" == "--help" ] || [ $# -eq 0 ]
 then
 	echo "EXECUTION: bash this_script.sh output_csv"
-	echo "this will save the output to output_csv.csv"
+	echo -e "\tthis will save the output to output_csv.csv\n"
 	echo "REQUIREMENTS: ../inputs with the files $INPUTFILES"
-	echo "../src with the files $CODE"
-	echo "sequential.c and parallel.c both output the result+\n+time of execution"
-	echo "the _percentage.c files output output the result+\n+percentage of time spent on sequential parts"
+	echo -e "\t../src with the files $CODE"
+	echo "-> sequential.c and parallel.c both output the result+\n+time of execution"
+	echo "-> the _percentage.c files output output the result+\n+percentage of time spent on sequential parts"
 	exit
 fi
 
