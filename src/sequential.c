@@ -3,12 +3,13 @@
 #include <math.h>
 #include <mpi.h>
 #define DIM 3
-int main(void) {
+int main(int argc, char **argv) {
 	int i, j, k, n, c;
 	double dmin, dx;
 	double *x, *mean, *sum;
 	int *cluster, *count, color;
 	int flips;
+	MPI_Init(&argc, &argv);
 	scanf("%d", &k);
 	scanf("%d", &n);
 	x = (double *)malloc(sizeof(double)*DIM*n);
@@ -58,6 +59,7 @@ int main(void) {
   			}
 		}
 	}
+	MPI_Finalize();
 	for (i = 0; i < k; i++) {
 		for (j = 0; j < DIM; j++)
 			printf("%5.2f ", mean[i*DIM+j]);
