@@ -1,18 +1,15 @@
 #!/bin/bash
 INPUTDIR="../inputs"
-INPUTFILES=( "10x1M.txt" "10x2M.txt" "10x5M.txt" )
-TVALUES=( 1 2 4 8 )
+INPUTFILES=( "10x1M.txt" ) #"10x2M.txt" "10x5M.txt" )
+TVALUES=( 1 2 ) #4 8 )
 SRCDIR="../src"
 TEMPDIR=".temp"
 CODE=( "sequential.c" "parallel.c" "sequential_percentage.c" "parallel_percentage.c" )
-SEQ=0
-PAR=1
-SEQP=2
-PARP=3
 OUTPUT="$1.csv"
-CFLAGS="-fopenmp -Wextra -O3"
-COMPILER="gcc"
-NUM_EXECS=20
+CFLAGS="-Wextra -O3"
+CC="mpicc"
+EXEC="mpiexec"
+NUM_EXECS=2
 
 if [ "$1" == "--help" ] || [ $# -eq 0 ]
 then
@@ -31,7 +28,7 @@ echo "Source;Threads;Input;Result;Output" > $OUTPUT
 mkdir $TEMPDIR
 for SRCFILE in "${CODE[@]}"
 do
-	$COMPILER $SRCDIR/$SRCFILE -o $TEMPDIR/${SRCFILE%".c"}.out 
+	$CC $SRCDIR/$SRCFILE -o $TEMPDIR/${SRCFILE%".c"}.out 
 done
 
 for VERSION in "${CODE[@]}"
@@ -47,7 +44,7 @@ do
 		do
 			for INPUT in "${INPUTFILES[@]}"
 			do
-				./$TEMPDIR/${VERSION%".c"}.out < $INPUTDIR/$INPUT > $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt
+				$EXEC -n $THREADS $TEMPDIR/${VERSION%".c"}.out < $INPUTDIR/$INPUT > $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt
 				RESULT="`tail -n 1 $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt`" # is either a percentage or a time count
 				OUTSTATUS="ok"
 				if [ "`head --lines=-2 $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt`" != "`head --lines=-2 $TEMPDIR/sequential_${INPUT%".txt"}.txt`" ]

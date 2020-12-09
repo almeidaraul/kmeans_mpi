@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <mpi.h>
 #define DIM 3
 int main(void) {
 	int i, j, k, n, c;
