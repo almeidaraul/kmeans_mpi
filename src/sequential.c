@@ -69,5 +69,6 @@ int main(void) {
 		printf("%d\n", cluster[i]);
 	}
 	#endif
+	printf("\n1\n");
 	return(0);
 }
