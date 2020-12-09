@@ -1,7 +1,7 @@
 #!/bin/bash
 INPUTDIR="../inputs"
-INPUTFILES=( "10x1M.txt" ) #"10x2M.txt" "10x5M.txt" )
-TVALUES=( 1 2 ) #4 8 )
+INPUTFILES=( "10x1M.txt" "10x2M.txt" "10x5M.txt" )
+TVALUES=( 1 2 4 8 )
 SRCDIR="../src"
 TEMPDIR=".temp"
 CODE=( "sequential.c" "parallel.c" "sequential_percentage.c" "parallel_percentage.c" )
@@ -9,7 +9,7 @@ OUTPUT="$1.csv"
 CFLAGS="-Wextra -O3"
 CC="mpicc"
 EXEC="mpiexec"
-NUM_EXECS=2
+NUM_EXECS=20
 
 if [ "$1" == "--help" ] || [ $# -eq 0 ]
 then
