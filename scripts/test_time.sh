@@ -1,7 +1,7 @@
 #!/bin/bash
 INPUTDIR="../inputs"
-INPUTFILES=( "10x1M.txt" "10x2M.txt" "10x5M.txt" )
-TVALUES=( 1 2 4 8 )
+INPUTFILES=( "10x1M.txt" ) #"10x2M.txt" "10x5M.txt" )
+TVALUES=( 1 2 ) #4 8 )
 SRCDIR="../src"
 TEMPDIR=".temp"
 CODE=( "sequential.c" "parallel.c" "sequential_percentage.c" "parallel_percentage.c" )
@@ -9,7 +9,7 @@ OUTPUT="$1.csv"
 CFLAGS="-Wextra -O3"
 CC="mpicc"
 EXEC="mpiexec"
-NUM_EXECS=20
+NUM_EXECS=2
 
 if [ "$1" == "--help" ] || [ $# -eq 0 ]
 then
@@ -35,8 +35,8 @@ done
 for VERSION in "${CODE[@]}"
 do
 	echo "Running ${VERSION%".c"} version"
-	TITERS=$TVALUES
-	if [[ !$VERSION == *"parallel"* ]]; then
+	TITERS=${TVALUES[@]}
+	if [[ $VERSION == *"sequential"* ]]; then
 		TITERS=( 1 )
 	fi
 	for (( ITER=0; ITER<${NUM_EXECS}; ITER++ ))
@@ -45,7 +45,6 @@ do
 		do
 			for INPUT in "${INPUTFILES[@]}"
 			do
-				# TODO: mpiexec doesn't get anything from stdin for some reason
 				$EXEC -n $THREADS $TEMPDIR/${VERSION%".c"}.out < $INPUTDIR/$INPUT > $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt
 				RESULT="`tail -n 1 $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt`" # is either a percentage or a time count
 				OUTSTATUS="ok"

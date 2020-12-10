@@ -4,14 +4,15 @@
 #include <mpi.h>
 #define DIM 3
 int main(int argc, char **argv) {
+	int scanfArgs = 0;
 	int i, j, k, n, c;
 	double dmin, dx;
 	double *x, *mean, *sum;
 	int *cluster, *count, color;
 	int flips;
 	MPI_Init(&argc, &argv);
-	scanf("%d", &k);
-	scanf("%d", &n);
+	scanfArgs += scanf("%d", &k);
+	scanfArgs += scanf("%d", &n);
 	x = (double *)malloc(sizeof(double)*DIM*n);
 	mean = (double *)malloc(sizeof(double)*DIM*k);
 	sum= (double *)malloc(sizeof(double)*DIM*k);
@@ -20,9 +21,13 @@ int main(int argc, char **argv) {
 	for (i = 0; i<n; i++)
 		cluster[i] = 0;
 	for (i = 0; i<k; i++)
-		scanf("%lf %lf %lf", mean+i*DIM, mean+i*DIM+1, mean+i*DIM+2);
+		scanfArgs += scanf("%lf %lf %lf", mean+i*DIM, mean+i*DIM+1, mean+i*DIM+2);
 	for (i = 0; i<n; i++)
-		scanf("%lf %lf %lf", x+i*DIM, x+i*DIM+1, x+i*DIM+2);
+		scanfArgs += scanf("%lf %lf %lf", x+i*DIM, x+i*DIM+1, x+i*DIM+2);
+
+	if (scanfArgs < 3*(k+n)+2)
+		exit(EXIT_FAILURE);
+
 	flips = n;
 	while (flips>0) {
 		flips = 0;
