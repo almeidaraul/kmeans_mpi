@@ -1,6 +1,6 @@
 #!/bin/bash
 INPUTDIR="../inputs"
-INPUTFILES=( "10x1M.txt" ) #"10x2M.txt" "10x5M.txt" )
+INPUTFILES=( "10x1M.txt" "10x2M.txt" "10x5M.txt" )
 TVALUES=( 1 2 4 8 )
 SRCDIR="../src"
 TEMPDIR=".temp"
