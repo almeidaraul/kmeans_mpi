@@ -1,7 +1,7 @@
 #!/bin/bash
 INPUTDIR="../inputs"
 INPUTFILES=( "10x1M.txt" ) #"10x2M.txt" "10x5M.txt" )
-TVALUES=( 1 2 ) #4 8 )
+TVALUES=( 1 2 4 8 )
 SRCDIR="../src"
 TEMPDIR=".temp"
 CODE=( "sequential.c" "parallel.c" "sequential_percentage.c" "parallel_percentage.c" )
@@ -9,7 +9,7 @@ OUTPUT="$1.csv"
 CFLAGS="-Wextra -O3"
 CC="mpicc"
 EXEC="mpiexec"
-NUM_EXECS=2
+NUM_EXECS=20
 
 if [ "$1" == "--help" ] || [ $# -eq 0 ]
 then
@@ -41,9 +41,9 @@ do
 	fi
 	for (( ITER=0; ITER<${NUM_EXECS}; ITER++ ))
 	do
-		for THREADS in "${TITERS[@]}"
+		for THREADS in ${TITERS[@]}
 		do
-			for INPUT in "${INPUTFILES[@]}"
+			for INPUT in ${INPUTFILES[@]}
 			do
 				$EXEC -n $THREADS $TEMPDIR/${VERSION%".c"}.out < $INPUTDIR/$INPUT > $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt
 				RESULT="`tail -n 1 $TEMPDIR/${VERSION%".c"}_${INPUT%".txt"}.txt`" # is either a percentage or a time count
