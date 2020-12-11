@@ -8,4 +8,3 @@ print k
 print n
 for i in range(k+n):
 	print "%f %f %f" %(uni(-100,100), uni(-100,100), uni(-100,100))
-
