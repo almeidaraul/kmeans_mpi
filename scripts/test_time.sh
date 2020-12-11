@@ -8,7 +8,7 @@ CODE=( "sequential.c" "parallel.c" "sequential_percentage.c" "parallel_percentag
 OUTPUT="$1.csv"
 CFLAGS="-Wextra -O3"
 CC="mpicc"
-EXEC="mpiexec"
+EXEC="mpiexec --oversubscribe"
 NUM_EXECS=20
 
 if [ "$1" == "--help" ] || [ $# -eq 0 ]
