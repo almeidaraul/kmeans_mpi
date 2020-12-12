@@ -20,8 +20,10 @@ int main(int argc, char **argv) {
 	int my_rank, n_procs;
 	int xs; //xsize
 	int *sendcounts, *displs;
+	double stime, etime;
 
 	MPI_Init(&argc, &argv);
+	stime = MPI_Wtime();
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
 	sendcounts = (int *)malloc(sizeof(int)*n_procs);
@@ -141,13 +143,15 @@ int main(int argc, char **argv) {
 		}
 		MPI_Bcast(mean, k*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	}
+	MPI_Barrier(MPI_COMM_WORLD);
+	etime = MPI_Wtime();
 	if (my_rank == 0) {
 		for (i = 0; i < k; i++) {
 			for (j = 0; j < DIM; j++)
 				printf("%5.2f ", mean[i*DIM+j]);
 			printf("\n");
 		}
-		printf("\n1\n");
+		printf("\n%lf\n", etime-stime);
 	}
 	MPI_Finalize();
 	#ifdef DEBUG

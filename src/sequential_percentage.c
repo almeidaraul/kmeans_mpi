@@ -10,7 +10,10 @@ int main(int argc, char **argv) {
 	double *x, *mean, *sum;
 	int *cluster, *count, color;
 	int flips;
+	double stime, etime, wstime;
 	MPI_Init(&argc, &argv);
+	stime = MPI_Wtime();
+	//assume que é executado com -n 1
 	scanfArgs += scanf("%d", &k);
 	scanfArgs += scanf("%d", &n);
 	x = (double *)malloc(sizeof(double)*DIM*n);
@@ -28,6 +31,7 @@ int main(int argc, char **argv) {
 	if (scanfArgs < 3*(k+n)+2)
 		exit(EXIT_FAILURE);
 
+	wstime = MPI_Wtime();
 	flips = n;
 	while (flips>0) {
 		flips = 0;
@@ -60,16 +64,20 @@ int main(int argc, char **argv) {
 		}
 		for (i = 0; i < k; i++) {
 			for (j = 0; j < DIM; j++) {
+				//printf("sum[%d][%d] = %lf, count[%d] = %d\n", i, j, sum[i*DIM+j], i, count[i]);
 				mean[i*DIM+j] = sum[i*DIM+j]/count[i];
   			}
 		}
 	}
-	MPI_Finalize();
+	MPI_Barrier(MPI_COMM_WORLD);
+	etime = MPI_Wtime();
 	for (i = 0; i < k; i++) {
 		for (j = 0; j < DIM; j++)
 			printf("%5.2f ", mean[i*DIM+j]);
 		printf("\n");
 	}
+	printf("\n%lf\n", (etime-wstime)/(etime-stime));
+	MPI_Finalize();
 	#ifdef DEBUG
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < DIM; j++)
@@ -77,6 +85,5 @@ int main(int argc, char **argv) {
 		printf("%d\n", cluster[i]);
 	}
 	#endif
-	printf("\n3\n");
 	return(0);
 }
