@@ -2,17 +2,21 @@ CC=mpicc
 CFLAGS=-O3 -Wextra
 EXEC=mpiexec
 EFLAGS=--oversubscribe
-K=3
-N=13
+K=1
+N=2
 
-run: all
+run: run_par run_seq
+
+run_par: all
 	${EXEC} -n 2 par.out ${EFLAGS} < a.in
+
+run_seq: all
 	${EXEC} -n 1 seq.out ${EFLAGS} < a.in
 
 all: input seq par
 
 input:
-	python2 ../scripts/geninput.py ${K} ${N} < a.in
+	python2 ../scripts/geninput.py ${K} ${N} > a.in
 
 seq: sequential.c
 	${CC} sequential.c ${CFLAGS} -o seq.out

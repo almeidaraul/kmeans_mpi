@@ -3,7 +3,10 @@
 #include <math.h>
 #include <mpi.h>
 #define DIM 3
-#define intceil(x, y) ((x+y-1)/y);
+
+int intceil(int x, int y) {
+	return (x+y-1)/y;
+}
 
 int main(int argc, char **argv) {
 	int scanfArgs = 0;
@@ -15,16 +18,14 @@ int main(int argc, char **argv) {
 
 	//variáveis relativas ao uso do MPI
 	int my_rank, n_procs;
-	unsigned int xs, clusters;
+	int xs, clusters;
 	int *int_buffer;
 	double *double_buffer;
-	int *sendcounts, displs;
+	int *sendcounts, *displs;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
-
-	printf("Rank: %d, procs: %d\n", my_rank, n_procs);
 
 	if (my_rank == 0) { //le k e n, cria buffer de int e buffer de double
 		scanfArgs += scanf("%d", &k);
@@ -72,20 +73,17 @@ int main(int argc, char **argv) {
 		}
 	}
 	MPI_Bcast(mean, k*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Bcast de mean
-	//TODO sendcounts e displs do scatterv
+
 	sendcounts = (int *)malloc(sizeof(int)*n_procs);
 	displs = (int *)malloc(sizeof(int)*n_procs);
 	for (i = 0; i < n_procs; i++) {
-		sendcounts[i] = DIM*(my_rank == n_procs-1 ? n/n_procs : intceil(n, n_procs));
-		displs[i] = DIM*my_rank*intceil(n, n_procs);
+		sendcounts[i] = DIM*(i == n_procs-1 ? n/n_procs : intceil(n, n_procs));
+		displs[i] = DIM*i*intceil(n, n_procs);
 		// len(x) = 13 (5 valores de x, cada x tem 3 coordenadas), n_procs = 4
 		// 4 4 4 1 <-- sendcounts (sem multiplicar por DIM)
 		// 0 4 8 12 <-- displs (sem multiplicar por DIM)
 	}
-	if (my_rank == 0) {
-	}
-	MPI_Scatterv(x, sendcounts, displs, MPI_DOUBLE, ???, 
-	MPI_Bcast(x, n, MPI_DOUBLE, 0, MPI_COMM_WORLD); //TODO trocar isso por scatter; envia x pra todo mundo
+	MPI_Scatterv(x, sendcounts, displs, MPI_DOUBLE, x, xs, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	MPI_Finalize();
 	return 0;
 
@@ -98,36 +96,36 @@ int main(int argc, char **argv) {
 			for (i = 0; i < DIM; i++)
 				sum[j*DIM+i] = 0.0;
 		}
-		for (i = 0; i < n; i++) {
-			dmin = -1; color = cluster[i];
+		for (i = 0; i < n; i++) { // < xs/DIM
+			dmin = -1; color = cluster[i]; //TODO:cluster é menor agora
 			for (c = 0; c < k; c++) {
 				dx = 0.0;
 				for (j = 0; j < DIM; j++)
-					dx +=  (x[i*DIM+j] - mean[c*DIM+j])*(x[i*DIM+j] - mean[c*DIM+j]);
+					dx +=  (x[i*DIM+j] - mean[c*DIM+j])*(x[i*DIM+j] - mean[c*DIM+j]); //TODO: x é menor agora
 				if (dx < dmin || dmin == -1) {
 					color = c;
 					dmin = dx;
 				}
 			}
-			if (cluster[i] != color) {
+			if (cluster[i] != color) { //TODO: cluster é menor agora
 				flips++;
-				cluster[i] = color;
+				cluster[i] = color; //TODO: cluster é menor agora
 	      	}
 		}
 
 		for (i = 0; i < n; i++) {
-			count[cluster[i]]++;
+			count[cluster[i]]++; //TODO: cluster é menor agora
 			for (j = 0; j < DIM; j++)
-				sum[cluster[i]*DIM+j] += x[i*DIM+j];
+				sum[cluster[i]*DIM+j] += x[i*DIM+j]; //TODO: x é menor agora
 		}
-		//aqui: todo mundo manda sum e count pra a main
+		//TODO: todo mundo manda sum e count pra a main
 		//			todo mundo manda flips pra todo mundo (reduz com or)
-		for (i = 0; i < k; i++) {
+		for (i = 0; i < k; i++) { //TODO: esse for é só da main
 			for (j = 0; j < DIM; j++) {
 				mean[i*DIM+j] = sum[i*DIM+j]/count[i];
 			}
 		}
-		//aqui: main manda mean pra todo mundo
+		//TODO: main manda mean pra todo mundo
 	}
 	//MPI_Finalize();
 	for (i = 0; i < k; i++) {
