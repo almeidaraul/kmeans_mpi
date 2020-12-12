@@ -3,14 +3,14 @@ CFLAGS=-O3 -Wextra -Wall
 EXEC=mpiexec
 EFLAGS=--oversubscribe
 K=10
-N=50
+N=1000000
 
 run: run_par run_seq
 
-run_par: all
+run_par: par
 	${EXEC} -n 2 par.out ${EFLAGS} < a.in
 
-run_seq: all
+run_seq: seq
 	${EXEC} -n 1 seq.out ${EFLAGS} < a.in
 
 all: input seq par

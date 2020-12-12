@@ -16,73 +16,77 @@ int main(int argc, char **argv) {
 	int *cluster, *count, color;
 	int flips;
 
-	//variáveis relativas ao uso do MPI
+	//MPI
 	int my_rank, n_procs;
-	int xs, clusters;
-	int *int_buffer;
+	int xs; //xsize
 	int *sendcounts, *displs;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
-
-	if (my_rank == 0) { //le k e n, cria buffer de int e buffer de double
-		scanfArgs += scanf("%d", &k);
-		scanfArgs += scanf("%d", &n);
-		int_buffer = (int *)malloc(sizeof(int)*k);
-		int_buffer[0] = k;
-		int_buffer[1] = n;
-	} else {
-		int_buffer = (int *)malloc(sizeof(int)*2); //cria buffer temporario p/ ler k e n do Bcast
-	}
-	MPI_Bcast(int_buffer, 2, MPI_INT, 0, MPI_COMM_WORLD); //Bcast de k e n
+	sendcounts = (int *)malloc(sizeof(int)*n_procs);
+	displs = (int *)malloc(sizeof(int)*n_procs);
 
 	if (my_rank == 0) {
-		xs = DIM*n;
-		clusters = n;
-	} else { //atribui k e n, cria os buffers de int e double
-		k = int_buffer[0];
-		n = int_buffer[1];
-
-		free(int_buffer);
-		int_buffer = (int *)malloc(sizeof(int)*k);
-
-		xs = DIM*(my_rank == n_procs-1 ? n/n_procs : intceil(n, n_procs));
-		clusters = my_rank == n_procs-1 ? k/n_procs : intceil(k, n_procs);
+		scanfArgs += scanf("%d", &k);
+		scanfArgs += scanf("%d", &n);
 	}
-	if (xs == 0)
+	MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	xs = (my_rank == n_procs-1 ? n/n_procs : intceil(n, n_procs));
+	if (!xs) {
+		printf("closing %d", my_rank);
 		MPI_Finalize();
+	}
 
-	x = (double *)malloc(sizeof(double)*xs); //cada um tem o seu, e n precisa de todo o espaço
-	mean = (double *)malloc(sizeof(double)*DIM*k); //todo mundo tem
-	sum= (double *)malloc(sizeof(double)*DIM*k); //cada um tem o seu, mas todos de mesmo tamanho
-	cluster = (int *)malloc(sizeof(int)*clusters); //cada um tem o seu, e n precisa de todo o espaço
-	count = (int *)malloc(sizeof(int)*k); //cada um tem o seu, mas todos de mesmo tamanho
+	//todo mundo tem o "mesmo": mean
+	//cada um tem o seu, mas todos de mesmo tamanho: sum, count
+	//cada um tem o seu, com tamanho reduzido: x, cluster
+	if (my_rank == 0) {
+		x = (double *)malloc(sizeof(double)*DIM*n);
+	} else {
+		x = (double *)malloc(sizeof(double)*DIM*xs);
+	}
+	mean = (double *)malloc(sizeof(double)*DIM*k);
+	sum= (double *)malloc(sizeof(double)*DIM*k);
+	cluster = (int *)malloc(sizeof(int)*xs);
+	count = (int *)malloc(sizeof(int)*k);
 
-	for (i = 0; i<n; i++)
+	for (i = 0; i<xs; i++)
 		cluster[i] = 0;
-	
+
 	if (my_rank == 0) {
 		for (i = 0; i<k; i++)
 			scanfArgs += scanf("%lf %lf %lf", mean+i*DIM, mean+i*DIM+1, mean+i*DIM+2);
 		for (i = 0; i<n; i++)
 			scanfArgs += scanf("%lf %lf %lf", x+i*DIM, x+i*DIM+1, x+i*DIM+2);
-		if (scanfArgs < 3*(k+n)+2) {
+		if (scanfArgs < 3*(k+n)+2)
 			exit(EXIT_FAILURE);
-		}
 	}
-	MPI_Bcast(mean, k*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Bcast de mean
+	
+	MPI_Bcast(mean, k*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	/*
+	for (i =0 ; i< k; i++)
+		printf("%d has mean[%d]=%lf\n", my_rank, i, mean[i]);
+	*/
 
-	sendcounts = (int *)malloc(sizeof(int)*(n_procs));
-	displs = (int *)malloc(sizeof(int)*(n_procs));
-	for (i = 0; i < n_procs; i++) {
-		sendcounts[i] = DIM*(i == n_procs-1 ? n/n_procs : intceil(n, n_procs));
+	for (i = 0; i < n_procs-1; i++) {
+		sendcounts[i] = DIM*intceil(n, n_procs);
 		displs[i] = DIM*i*intceil(n, n_procs);
 	}
-	MPI_Scatterv(x, sendcounts, displs, MPI_DOUBLE, x, xs, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	sendcounts[n_procs-1] = DIM*(n/n_procs);
+	displs[n_procs-1] = DIM*(n_procs-1)*intceil(n, n_procs);
 
-	MPI_Finalize();
-	return 0;
+	MPI_Scatterv(x, sendcounts, displs, MPI_DOUBLE, x, xs*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	/*
+	if (my_rank == 0) {
+		for (i =0; i< n*DIM; i++)
+			printf("Global has x[%d]=%lf\n", i, x[i]);
+	}
+	for (i =0; i< xs*DIM; i++)
+		printf("%d has x[%d]=%lf\n", my_rank, i, x[i]);
+	*/
+
 	flips = n;
 	while (flips>0) {
 		flips = 0;
@@ -91,7 +95,7 @@ int main(int argc, char **argv) {
 			for (i = 0; i < DIM; i++)
 				sum[j*DIM+i] = 0.0;
 		}
-		for (i = 0; i < xs/DIM; i++) {
+		for (i = 0; i < xs; i++) {
 			dmin = -1; color = cluster[i];
 			for (c = 0; c < k; c++) {
 				dx = 0.0;
@@ -105,47 +109,37 @@ int main(int argc, char **argv) {
 			if (cluster[i] != color) {
 				flips++;
 				cluster[i] = color;
-	      	}
+			}
 		}
 
-		for (i = 0; i < xs/DIM; i++) {
+		for (i = 0; i < xs; i++) {
 			count[cluster[i]]++;
 			for (j = 0; j < DIM; j++)
 				sum[cluster[i]*DIM+j] += x[i*DIM+j];
 		}
-		//TODO apagar isso
-		if (my_rank == 0) {
-			for (i = 0; i < k; i++) {
-				for (j = 0; j < DIM; j++) {
-					//printf("sum[%d][%d] = %lf, count[%d] = %d\n", i, j, sum[i*DIM+j], i, count[i]);
-					i++;
-					i--;
-				}
-			}
-		}
-		//todo mundo manda sum pra a main
+
+		//main recebe sum de todos
 		if (my_rank == 0) {
 			MPI_Reduce(MPI_IN_PLACE, sum, DIM*k, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		} else {
 			MPI_Reduce(sum, sum, DIM*k, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 		}
-		//todo mundo manda count pra a main
+		//main recebe count de todos
 		if (my_rank == 0) {
 			MPI_Reduce(MPI_IN_PLACE, count, k, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 		} else {
 			MPI_Reduce(count, count, k, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 		}
-		MPI_Allreduce(&flips, &flips, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); //todo mundo manda flips pra todo mundo (reduz com or)
+		//todos recebem flips de todos
+		MPI_Allreduce(&flips, &flips, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 		if (my_rank == 0) {
 			for (i = 0; i < k; i++) {
 				for (j = 0; j < DIM; j++) {
-					//printf("sum[%d][%d] = %lf, count[%d] = %d\n", i, j, sum[i*DIM+j], i, count[i]);
 					mean[i*DIM+j] = sum[i*DIM+j]/count[i];
 				}
 			}
 		}
-		//main manda mean pra todo mundo
-		MPI_Bcast(mean, n, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+		MPI_Bcast(mean, k*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	}
 	if (my_rank == 0) {
 		for (i = 0; i < k; i++) {
@@ -153,8 +147,9 @@ int main(int argc, char **argv) {
 				printf("%5.2f ", mean[i*DIM+j]);
 			printf("\n");
 		}
-		printf("\n2\n");
+		printf("\n1\n");
 	}
+	MPI_Finalize();
 	#ifdef DEBUG
 	for (i = 0; i < n; i++) {
 		for (j = 0; j < DIM; j++)
@@ -162,6 +157,5 @@ int main(int argc, char **argv) {
 		printf("%d\n", cluster[i]);
 	}
 	#endif
-	MPI_Finalize();
 	return(0);
 }
