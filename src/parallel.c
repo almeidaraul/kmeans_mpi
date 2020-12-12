@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
 	unsigned int xs, clusters;
 	int *int_buffer;
 	double *double_buffer;
+	int *sendcounts, displs;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -48,7 +49,7 @@ int main(int argc, char **argv) {
 		int_buffer = (int *)malloc(sizeof(int)*k);
 		double_buffer = (double *)malloc(sizeof(int)*DIM*n);
 
-		xs = my_rank == n_procs-1 ? n/n_procs : intceil(n, n_procs);
+		xs = DIM*(my_rank == n_procs-1 ? n/n_procs : intceil(n, n_procs));
 		clusters = my_rank == n_procs-1 ? k/n_procs : intceil(k, n_procs);
 	}
 
@@ -71,6 +72,19 @@ int main(int argc, char **argv) {
 		}
 	}
 	MPI_Bcast(mean, k*DIM, MPI_DOUBLE, 0, MPI_COMM_WORLD); //Bcast de mean
+	//TODO sendcounts e displs do scatterv
+	sendcounts = (int *)malloc(sizeof(int)*n_procs);
+	displs = (int *)malloc(sizeof(int)*n_procs);
+	for (i = 0; i < n_procs; i++) {
+		sendcounts[i] = DIM*(my_rank == n_procs-1 ? n/n_procs : intceil(n, n_procs));
+		displs[i] = DIM*my_rank*intceil(n, n_procs);
+		// len(x) = 13 (5 valores de x, cada x tem 3 coordenadas), n_procs = 4
+		// 4 4 4 1 <-- sendcounts (sem multiplicar por DIM)
+		// 0 4 8 12 <-- displs (sem multiplicar por DIM)
+	}
+	if (my_rank == 0) {
+	}
+	MPI_Scatterv(x, sendcounts, displs, MPI_DOUBLE, ???, 
 	MPI_Bcast(x, n, MPI_DOUBLE, 0, MPI_COMM_WORLD); //TODO trocar isso por scatter; envia x pra todo mundo
 	MPI_Finalize();
 	return 0;
