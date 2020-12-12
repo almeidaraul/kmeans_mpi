@@ -1,9 +1,9 @@
 CC=mpicc
-CFLAGS=-O3 -Wextra
+CFLAGS=-O3 -Wextra -Wall
 EXEC=mpiexec
 EFLAGS=--oversubscribe
-K=1
-N=2
+K=10
+N=50
 
 run: run_par run_seq
 

@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
 		}
 		for (i = 0; i < k; i++) {
 			for (j = 0; j < DIM; j++) {
+				printf("sum[%d][%d] = %lf, count[%d] = %d\n", i, j, sum[i*DIM+j], i, count[i]);
 				mean[i*DIM+j] = sum[i*DIM+j]/count[i];
   			}
 		}
