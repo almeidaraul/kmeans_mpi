@@ -1,5 +1,5 @@
 inputs/*
-*.csv
+scripts/*.csv
 src/*.in
 src/*.out
 # Begin https://www.toptal.com/developers/gitignore/api/c
